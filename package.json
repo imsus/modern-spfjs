@@ -42,8 +42,10 @@
     "check": "vp check"
   },
   "devDependencies": {
+    "@oxlint/plugins": "1.78.0",
     "@types/node": "^22.0.0",
     "jsdom": "^25.0.0",
+    "oxlint": "1.78.0",
     "typescript": "^7.0.2",
     "vite-plus": "^0.2.9",
     "vitest": "4.1.10"

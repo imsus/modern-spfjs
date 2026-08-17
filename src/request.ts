@@ -20,22 +20,23 @@ export function buildRequestUrl(url: string, type: SpfRequestType = 'navigate'):
   return url + marker;
 }
 
-/** Builds the request headers. */
-export function buildHeaders(
-  options: RequestOptions,
-  type: SpfRequestType = 'navigate',
-): Record<string, string> {
-  const headers: Record<string, string> = { Accept: ACCEPT };
+/** Builds the request headers (config → options → SPF identification wins). */
+export function buildHeaders(options: RequestOptions, type: SpfRequestType = 'navigate') {
+  const headers = new Headers({ Accept: ACCEPT });
   const configHeaders = config.get('request-headers');
-  if (configHeaders) Object.assign(headers, configHeaders);
-  if (options.headers) Object.assign(headers, options.headers);
+  if (configHeaders) {
+    for (const [key, value] of Object.entries(configHeaders)) headers.set(key, value);
+  }
+  if (options.headers) {
+    for (const [key, value] of Object.entries(options.headers)) headers.set(key, value);
+  }
   const headerId = config.get('advanced-header-identifier');
   if (headerId) {
-    headers['X-SPF-Request'] = headerId.replace('__type__', type);
-    headers['Accept'] = 'application/json';
+    headers.set('X-SPF-Request', headerId.replace('__type__', type));
+    headers.set('Accept', 'application/json');
   }
-  if (options.referer != null) headers['X-SPF-Referer'] = options.referer;
-  if (options.current != null) headers['X-SPF-Previous'] = options.current;
+  if (options.referer != null) headers.set('X-SPF-Referer', options.referer);
+  if (options.current != null) headers.set('X-SPF-Previous', options.current);
   return headers;
 }
 
@@ -66,6 +67,7 @@ export async function fetchResponse(
     if (contentType.includes('application/x-spf+ndjson') && res.body) {
       return await parseStream(res.body, options);
     }
+    // SAFETY: the SPF server contract (spec/PROTOCOL.md) guarantees a SingleResponse JSON body.
     return (await res.json()) as SingleResponse;
   } finally {
     if (timer) clearTimeout(timer);
@@ -90,6 +92,7 @@ export async function parseStream(
       const line = buffer.slice(0, nl).trim();
       buffer = buffer.slice(nl + 1);
       if (line) {
+        // SAFETY: each NDJSON line is a StreamPart per the SPF protocol.
         const part = JSON.parse(line) as StreamPart;
         await handlePart(part, aggregated, options);
       }

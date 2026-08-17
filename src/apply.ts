@@ -69,8 +69,10 @@ export async function installHtml(html: string, wait: boolean): Promise<void> {
   const nodes = [...template.content.childNodes];
   for (const node of nodes) {
     if (node.nodeType === Node.ELEMENT_NODE) {
+      // SAFETY: nodeType === ELEMENT_NODE guarantees an element.
       const el = node as HTMLElement;
       if (el.tagName === 'SCRIPT') {
+        // SAFETY: tagName === 'SCRIPT' narrows the element to a script element.
         await installScript(el as HTMLScriptElement, wait);
         continue;
       }

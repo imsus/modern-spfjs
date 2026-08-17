@@ -40,14 +40,14 @@ describe('buildHeaders', () => {
   it('sends the SPF accept header by default', () => {
     config.clear();
     const headers = buildHeaders({});
-    expect(headers['Accept']).toBe('application/x-spf+json, application/x-spf+ndjson;q=0.9');
+    expect(headers.get('Accept')).toBe('application/x-spf+json, application/x-spf+ndjson;q=0.9');
   });
 
   it('sends referer/previous when provided', () => {
     config.clear();
     const headers = buildHeaders({ referer: '/a', current: '/b' });
-    expect(headers['X-SPF-Referer']).toBe('/a');
-    expect(headers['X-SPF-Previous']).toBe('/b');
+    expect(headers.get('X-SPF-Referer')).toBe('/a');
+    expect(headers.get('X-SPF-Previous')).toBe('/b');
   });
 
   it('uses the header identifier when configured', () => {
@@ -55,8 +55,8 @@ describe('buildHeaders', () => {
     // value is the value template with __type__ replaced by the request type.
     config.init({ 'advanced-header-identifier': '__type__' });
     const headers = buildHeaders({}, 'navigate');
-    expect(headers['X-SPF-Request']).toBe('navigate');
-    expect(headers['Accept']).toBe('application/json');
+    expect(headers.get('X-SPF-Request')).toBe('navigate');
+    expect(headers.get('Accept')).toBe('application/json');
     config.clear();
   });
 });

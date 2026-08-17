@@ -25,6 +25,11 @@ interface CacheEntry {
 const CACHE_NAME = 'modern-spf';
 const store = new Map<string, CacheEntry>();
 
+/** The Cache API exists only in secure contexts — feature-detect by property. */
+function cachesAvailable(): boolean {
+  return 'caches' in globalThis;
+}
+
 function cacheKey(url: string, type: string): string {
   return `${type} ${url}`;
 }
@@ -33,7 +38,7 @@ function now(): number {
   return Date.now();
 }
 
-function isCacheType(value: unknown): value is CacheType {
+function isCacheType(value: string | undefined): value is CacheType {
   return value === 'new' || value === 'history' || value === 'prefetch';
 }
 
@@ -50,10 +55,7 @@ function eligible(type: CacheType, navType: SpfNavigationType): boolean {
 }
 
 /** Reads a cached response for a navigation, downgrading prefetch entries. */
-export function get(
-  url: string,
-  navType: SpfNavigationType,
-): SingleResponse | null {
+export function get(url: string, navType: SpfNavigationType): SingleResponse | null {
   for (const type of ['prefetch', 'history', 'new'] as const) {
     const entry = store.get(cacheKey(url, type));
     if (!entry) continue;
@@ -77,11 +79,7 @@ export function get(
  * Stores a response, honoring a server `cacheType` hint over the caller's
  * default type, then evicting expired/overflow entries (LRU).
  */
-export function set(
-  url: string,
-  response: SingleResponse,
-  type: CacheType = 'new',
-): string {
+export function set(url: string, response: SingleResponse, type: CacheType = 'new'): string {
   const entryType = isCacheType(response.cacheType) ? response.cacheType : type;
   const key = cacheKey(url, entryType);
   const lifetime = config.get('cache-lifetime');
@@ -102,8 +100,7 @@ export function set(
  * `response.cacheKey` — including its durable-tier copy.
  */
 export function remove(key: string): void {
-  const entry =
-    store.get(key) ?? [...store.values()].find((e) => e.response.cacheKey === key);
+  const entry = store.get(key) ?? [...store.values()].find((e) => e.response.cacheKey === key);
   if (!entry) return;
   store.delete(entry.key);
   void persistent.delete(entry.url);
@@ -116,7 +113,7 @@ export function clear(): void {
 }
 
 async function clearPersistent(): Promise<void> {
-  if (typeof caches === 'undefined') return;
+  if (!cachesAvailable()) return;
   const cache = await caches.open(CACHE_NAME);
   const keys = await cache.keys();
   await Promise.all(keys.map((key) => cache.delete(key)));
@@ -151,7 +148,7 @@ interface PersistentEntry {
 
 export const persistent = {
   async put(url: string, response: SingleResponse): Promise<void> {
-    if (typeof caches === 'undefined') return;
+    if (!cachesAvailable()) return;
     const cache = await caches.open(CACHE_NAME);
     const entry: PersistentEntry = { cachedAt: Date.now(), response };
     await cache.put(
@@ -162,10 +159,11 @@ export const persistent = {
     );
   },
   async match(url: string): Promise<SingleResponse | null> {
-    if (typeof caches === 'undefined') return null;
+    if (!cachesAvailable()) return null;
     const cache = await caches.open(CACHE_NAME);
     const res = await cache.match(url);
     if (!res) return null;
+    // SAFETY: only persistent.put writes this store, always a JSON PersistentEntry.
     const entry = (await res.json()) as PersistentEntry;
     if (Date.now() - entry.cachedAt > config.get('cache-lifetime')) {
       void cache.delete(url); // expired — drop it
@@ -174,7 +172,7 @@ export const persistent = {
     return entry.response;
   },
   async delete(url: string): Promise<boolean> {
-    if (typeof caches === 'undefined') return false;
+    if (!cachesAvailable()) return false;
     const cache = await caches.open(CACHE_NAME);
     return cache.delete(url);
   },

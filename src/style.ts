@@ -38,7 +38,7 @@ export const style = {
 
   /** Requests a stylesheet without applying it, priming the browser cache. */
   prefetch(url: string): void {
-    if (typeof document === 'undefined') return;
+    if (!('document' in globalThis)) return;
     const link = document.createElement('link');
     link.rel = 'preload';
     link.as = 'style';

@@ -14,7 +14,7 @@ const registry = new Map<SpfEventName, Set<SpfEventHandler>>();
 
 /** Dispatches synchronously (used for click-time events). */
 function dispatchSync(name: SpfEventName, detail: SpfEventDetail): boolean {
-  if (typeof document === 'undefined') return true; // non-DOM context
+  if (!('document' in globalThis)) return true; // non-DOM context
   const evt = new CustomEvent<SpfEventDetail>(name, {
     cancelable: true,
     detail,

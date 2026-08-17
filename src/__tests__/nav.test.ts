@@ -5,8 +5,13 @@ import { config } from '../config';
 import { event } from '../events';
 import * as nav from '../nav';
 
+import type { SingleResponse } from '../types';
+
+/** The state stored on SPF history entries (spf.navigate marks them). */
+type NavState = { spf?: boolean };
+
 interface MockNavigateEvent extends Event {
-  destination: { url: string; getState: () => unknown };
+  destination: { url: string; getState: () => NavState | undefined };
   navigationType: 'push' | 'traverse';
   intercept: (opts: { handler: () => Promise<void> }) => void;
   scroll: ReturnType<typeof vi.fn>;
@@ -17,28 +22,31 @@ interface MockNavigateEvent extends Event {
 function makeNavigationMock() {
   const listeners = new Set<(e: MockNavigateEvent) => void>();
   let lastEvent: MockNavigateEvent | null = null;
-  const dispatch = (url: string, navigationType: 'push' | 'traverse', state: unknown) => {
-    const evt = new Event('navigate', { cancelable: true }) as unknown as MockNavigateEvent;
+  const dispatch = (url: string, navigationType: 'push' | 'traverse', state?: NavState) => {
+    // SAFETY: Object.assign adds the mock members onto the Event instance; the
+    // single assertion narrows the intersection to the mock contract.
+    const evt = Object.assign(new Event('navigate', { cancelable: true }), {
+      destination: { url, getState: () => state },
+      navigationType,
+      intercepted: false,
+      scroll: vi.fn(),
+      run: async () => {
+        if (handler) await handler();
+      },
+    }) as MockNavigateEvent;
     let handler: (() => Promise<void>) | null = null;
-    evt.destination = { url, getState: () => state };
-    evt.navigationType = navigationType;
-    evt.intercepted = false;
     evt.intercept = (opts) => {
       evt.intercepted = true;
       handler = opts.handler;
-    };
-    evt.scroll = vi.fn();
-    evt.run = async () => {
-      if (handler) await handler();
     };
     lastEvent = evt;
     for (const fn of listeners) fn(evt);
   };
   return {
-    navigate(url: string, opts?: { state?: unknown }) {
+    navigate(url: string, opts?: { state?: NavState }) {
       dispatch(url, 'push', opts?.state);
     },
-    dispatchTraverse(url: string, state?: unknown) {
+    dispatchTraverse(url: string, state?: NavState) {
       dispatch(url, 'traverse', state);
     },
     addEventListener(_t: string, fn: (e: MockNavigateEvent) => void) {
@@ -57,7 +65,7 @@ type NavMock = ReturnType<typeof makeNavigationMock>;
 
 const DEST = 'http://localhost:3000/dest';
 
-function jsonResponse(body: object): Response {
+function jsonResponse(body: SingleResponse): Response {
   return new Response(JSON.stringify(body), {
     headers: { 'content-type': 'application/x-spf+json' },
   });
@@ -162,6 +170,7 @@ describe('new navigation (click)', () => {
     // whose detail.url is the reload target (jsdom's location is not spyable).
     const reloads: unknown[] = [];
     document.addEventListener('spfreload', (e) => {
+      // SAFETY: SPF dispatches its events as CustomEvents with a detail object.
       reloads.push((e as CustomEvent).detail);
     });
     document.body.innerHTML = '<a id="l" class="spf-link" href="/dest">Go</a>';
@@ -173,6 +182,7 @@ describe('new navigation (click)', () => {
 
     expect(errors).toHaveLength(1);
     expect(reloads).toHaveLength(1);
+    // SAFETY: spfreload details always carry the reload target as `url`.
     expect((reloads[0] as { url: string }).url).toBe(DEST);
   });
 
@@ -184,6 +194,7 @@ describe('new navigation (click)', () => {
     });
     const reloads: unknown[] = [];
     document.addEventListener('spfreload', (e) => {
+      // SAFETY: SPF dispatches its events as CustomEvents with a detail object.
       reloads.push((e as CustomEvent).detail);
     });
     document.body.innerHTML =
@@ -196,6 +207,7 @@ describe('new navigation (click)', () => {
 
     expect(errors).toHaveLength(1);
     expect(reloads).toHaveLength(1);
+    // SAFETY: spfreload details always carry the reload target as `url`.
     expect((reloads[0] as { url: string }).url).toBe(DEST);
     // A reload:true response must NOT be applied as a successful navigation.
     expect(document.getElementById('content')!.innerHTML).toBe('old');
@@ -220,6 +232,7 @@ describe('history navigation (traverse)', () => {
     // spfhistory is a *sync* dispatch (click-time semantics) — observe via
     // the document CustomEvent, not the Promise-aware registry.
     document.addEventListener('spfhistory', (e) => {
+      // SAFETY: SPF dispatches its events as CustomEvents with a detail object.
       historyEvents.push((e as CustomEvent).detail);
     });
 

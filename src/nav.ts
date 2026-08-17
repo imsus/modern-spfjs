@@ -76,11 +76,13 @@ function isIgnorableClick(evt: MouseEvent): boolean {
 
 function handleClick(evt: MouseEvent): void {
   if (isIgnorableClick(evt)) return;
-  const link = findSpfLink(evt.target as Element | null);
+  // SAFETY: click events originate from DOM elements; the target may be null.
+  const target = evt.target as Element | null;
+  const link = findSpfLink(target);
   if (!link) return;
   const url = normalize(getHref(link));
   if (!sameOrigin(url)) return;
-  if (!event.emitSync('spfclick', { url, target: evt.target as Element })) {
+  if (!event.emitSync('spfclick', { url, target })) {
     return; // cancelled: let the browser navigate normally
   }
   evt.preventDefault();
@@ -156,9 +158,9 @@ async function runPipeline(
         'navigate',
       );
       cache.set(url, response, navType);
-      cache.persistent.put(url, response).catch((err) =>
-        console.warn('modern-spf: failed to persist response', err),
-      );
+      cache.persistent
+        .put(url, response)
+        .catch((err) => console.warn('modern-spf: failed to persist response', err));
     } else {
       cache.set(url, response, navType); // promote durable hit into memory
     }
@@ -183,7 +185,10 @@ async function runPipeline(
     await event.emit('spfdone', { ...detail, response, transitioned });
     await options.onDone?.({ ...detail, response });
   } catch (err) {
-    const errorDetail: SpfEventDetail = { ...detail, err: err as Error };
+    const errorDetail: SpfEventDetail = {
+      ...detail,
+      err: err instanceof Error ? err : new Error(String(err)),
+    };
     await event.emit('spferror', errorDetail);
     await options.onError?.(errorDetail);
     fallback(url, detail);
@@ -200,9 +205,12 @@ async function applyWithTransition(
   response: SingleResponse,
   transition: boolean,
 ): Promise<boolean> {
+  // `instanceof Function` — not typeof — because some environments declare
+  // these globals as present-but-undefined stubs (feature detection must
+  // verify callability, not existence).
   const reduced =
-    typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (transition && !reduced && typeof document.startViewTransition === 'function') {
+    matchMedia instanceof Function && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (transition && !reduced && document.startViewTransition instanceof Function) {
     await document.startViewTransition(async () => applyResponse(response)).finished;
     return true;
   }
@@ -237,6 +245,7 @@ export function init(): boolean {
       (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
+            // SAFETY: the observer only observes anchors (refreshLinks observes a.spf-link).
             const link = entry.target as HTMLAnchorElement;
             void prefetch(link.href);
             viewportObserver?.unobserve(entry.target);
@@ -267,12 +276,9 @@ function refreshLinks(): void {
  * spf-links. Chrome/Edge only; other browsers ignore the script type.
  */
 function injectSpeculationRules(): void {
-  const supports = (
-    HTMLScriptElement as unknown as {
-      supports?: (type: string) => boolean;
-    }
-  ).supports;
-  if (typeof supports !== 'function' || !supports('speculationrules')) return;
+  if (!('supports' in HTMLScriptElement) || !HTMLScriptElement.supports('speculationrules')) {
+    return;
+  }
   const mode = config.get('speculation');
   if (mode === 'none') return;
   const linkClass = config.get('link-class');

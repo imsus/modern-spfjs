@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
 import { event } from '../events';
+import type { SpfEventDetail } from '../types';
 
 afterEach(() => {
   event.clear();
@@ -31,9 +32,10 @@ describe('event', () => {
   });
 
   it('dispatches a CustomEvent on document for external listeners', async () => {
-    let detail: unknown = null;
+    let detail: SpfEventDetail | null = null;
     document.addEventListener('spfrequest', (e) => {
-      detail = (e as CustomEvent).detail;
+      // SAFETY: SPF dispatches its events as CustomEvents with an SpfEventDetail.
+      detail = (e as CustomEvent<SpfEventDetail>).detail;
     });
     await event.emit('spfrequest', { url: '/y' });
     expect(detail).toEqual({ url: '/y' });

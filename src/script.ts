@@ -11,22 +11,30 @@ export const script = {
   /**
    * Loads a module once (deduped by name or specifier) and returns its
    * namespace. Bare specifiers resolve through the page's import map.
+   * Callers may specify `T` to describe the module they import; the module
+   * namespace contract is theirs to assert at this boundary.
    */
-  load(specifier: string, name?: string): Promise<unknown> {
+  load<T = unknown>(specifier: string, name?: string): Promise<T> {
     const key = name ?? specifier;
     const existing = registry.get(key);
-    if (existing) return existing;
-    const promise = import(/* @vite-ignore */ specifier).catch((err: unknown) => {
+    if (existing) {
+      // SAFETY: import() returns an untyped module namespace; T is the caller's
+      // declared contract for the module being loaded.
+      return existing as Promise<T>;
+    }
+    const promise = import(/* @vite-ignore */ specifier).catch((err) => {
       registry.delete(key);
       throw err;
     });
     registry.set(key, promise);
-    return promise;
+    // SAFETY: import() returns an untyped module namespace; T is the caller's
+    // declared contract for the module being loaded.
+    return promise as Promise<T>;
   },
 
   /** Requests a module without executing it, priming the browser cache. */
   prefetch(specifier: string): void {
-    if (typeof document === 'undefined') return;
+    if (!('document' in globalThis)) return;
     const link = document.createElement('link');
     link.rel = 'modulepreload';
     link.href = specifier;
