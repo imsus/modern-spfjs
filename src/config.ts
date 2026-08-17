@@ -36,8 +36,6 @@ export interface SpfConfig {
   'experimental-prefetch-mousedown': boolean;
   /** Prefetch spf-links as they enter the viewport. */
   'prefetch-viewport': boolean;
-  /** Allow speculation-rules prerender (Chrome/Edge). */
-  prerender: boolean;
   /** Speculation rules strategy: 'prefetch' | 'prerender' | 'none'. */
   speculation: 'prefetch' | 'prerender' | 'none';
 }
@@ -59,7 +57,6 @@ export const DEFAULT_CONFIG: SpfConfig = {
   'advanced-header-identifier': null,
   'experimental-prefetch-mousedown': false,
   'prefetch-viewport': true,
-  prerender: false,
   speculation: 'prefetch',
 };
 

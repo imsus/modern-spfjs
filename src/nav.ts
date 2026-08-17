@@ -2,10 +2,12 @@
  * Navigation layer: link delegation + Navigation API interception.
  *
  * Flow: a click on an `.spf-link` (or `spf.navigate`) sets a pending intent
- * and calls `window.navigation.navigate(url)`; the `navigate` event listener
- * sees the matching destination, intercepts it, and runs the SPF pipeline:
- * spfrequest → (cache) → fetch → spfprocess → apply → spfdone. Failures fall
- * back to a full browser navigation.
+ * and calls `window.navigation.navigate(url, { state: { spf: true } })`; the
+ * `navigate` event listener sees the matching destination, intercepts it, and
+ * runs the SPF pipeline: spfrequest → (cache) → fetch → spfprocess → apply →
+ * spfdone. Back/forward (traverse) navigations to one of our entries are
+ * restored from cache (durable tier first for history). Failures fall back to
+ * a full browser navigation.
  */
 
 import { applyResponse } from './apply';
@@ -13,28 +15,25 @@ import { cache } from './cache';
 import { config } from './config';
 import { event } from './events';
 import { fetchResponse } from './request';
-import type { RequestOptions, SingleResponse, SpfEventDetail } from './types';
+import { script } from './script';
+import { style } from './style';
+import type { RequestOptions, SingleResponse, SpfEventDetail, SpfNavigationType } from './types';
 
 interface PendingIntent {
   url: string;
   options: RequestOptions;
   transition: boolean;
+  /** Resolves the Promise returned by spf.navigate() when the pipeline settles. */
+  resolve: (() => void) | null;
 }
 
 let initialized = false;
 let pending: PendingIntent | null = null;
 let viewportObserver: IntersectionObserver | null = null;
+let speculationScript: HTMLScriptElement | null = null;
 
-/**
- * `transitionWhile` is part of the Navigation API spec but is not present in
- * TS7's generated lib.dom types; augment locally (optional, feature-detected
- * at the call site via `document.startViewTransition`).
- */
-declare global {
-  interface NavigateEvent {
-    transitionWhile?(promise: Promise<unknown>): void;
-  }
-}
+/** History-entry marker used to recognize our own navigations on back/forward. */
+const SPF_STATE = { spf: true };
 
 function normalize(url: string): string {
   return new URL(url, location.href).href;
@@ -89,37 +88,49 @@ function handleClick(evt: MouseEvent): void {
     url,
     options: {},
     transition: !link.classList.contains('spf-no-transition'),
+    resolve: null,
   };
-  window.navigation.navigate(url, { history: 'push' });
+  window.navigation.navigate(url, { history: 'push', state: SPF_STATE });
+}
+
+/** Intercepts a navigation and restores scroll when the handler completes. */
+function interceptNavigation(evt: NavigateEvent, run: () => Promise<void>): void {
+  evt.intercept({
+    handler: async () => {
+      await run();
+      evt.scroll?.();
+    },
+  });
 }
 
 function handleNavigate(evt: NavigateEvent): void {
   const url = evt.destination.url;
+  if (!sameOrigin(url)) return;
   if (evt.navigationType === 'traverse') {
-    // Deepening step: restore from cache (new/history split). For the
-    // vertical slice, let the browser handle back/forward natively.
+    handleTraverse(evt, url);
     return;
   }
-  if (!sameOrigin(url)) return;
   const intent = pending;
   pending = null;
   if (!intent || intent.url !== url) return; // not an SPF navigation
-  const pipeline = () => runPipeline(url, intent.options, intent.transition);
-  if (
-    intent.transition &&
-    typeof document.startViewTransition === 'function' &&
-    !matchMedia('(prefers-reduced-motion: reduce)').matches
-  ) {
-    evt.transitionWhile?.(pipeline());
-  } else {
-    evt.intercept({ handler: pipeline });
-  }
+  interceptNavigation(evt, async () => {
+    await runPipeline(url, intent.options, intent.transition, 'new');
+    intent.resolve?.();
+  });
+}
+
+function handleTraverse(evt: NavigateEvent, url: string): void {
+  const state = evt.destination.getState?.();
+  if (!state?.spf) return; // not one of ours — let the browser handle it
+  if (!event.emitSync('spfhistory', { url, previous: location.href })) return;
+  interceptNavigation(evt, () => runPipeline(url, {}, true, 'history'));
 }
 
 async function runPipeline(
   url: string,
   options: RequestOptions,
   transition: boolean,
+  navType: SpfNavigationType,
 ): Promise<void> {
   const detail: SpfEventDetail = {
     url,
@@ -132,10 +143,30 @@ async function runPipeline(
   }
   await options.onRequest?.(detail);
   try {
-    let response: SingleResponse | null = cache.get(url, 'new');
+    let response: SingleResponse | null = cache.get(url, navType);
+    if (!response) response = await cache.durableGet(url, navType);
     if (!response) {
-      response = await fetchResponse(url, options, 'navigate');
-      cache.set(url, response, 'new');
+      response = await fetchResponse(
+        url,
+        {
+          ...options,
+          referer: options.referer ?? location.href,
+          current: options.current ?? location.href,
+        },
+        'navigate',
+      );
+      cache.set(url, response, navType);
+      cache.persistent.put(url, response).catch((err) =>
+        console.warn('modern-spf: failed to persist response', err),
+      );
+    } else {
+      cache.set(url, response, navType); // promote durable hit into memory
+    }
+    if (response.reload) {
+      // PROTOCOL: reload:true → fall back to a full navigation + spferror.
+      await event.emit('spferror', { ...detail });
+      fallback(url, detail);
+      return;
     }
     if (response.redirect) {
       fallback(response.redirect, detail);
@@ -147,8 +178,9 @@ async function runPipeline(
       return;
     }
     await options.onProcess?.(processDetail);
-    await applyResponse(response);
-    await event.emit('spfdone', { ...detail, response, transitioned: transition });
+    const transitioned = await applyWithTransition(response, transition);
+    refreshLinks(); // new page content: observe links + refresh speculation rules
+    await event.emit('spfdone', { ...detail, response, transitioned });
     await options.onDone?.({ ...detail, response });
   } catch (err) {
     const errorDetail: SpfEventDetail = { ...detail, err: err as Error };
@@ -156,6 +188,26 @@ async function runPipeline(
     await options.onError?.(errorDetail);
     fallback(url, detail);
   }
+}
+
+/**
+ * Applies a response, wrapping only the DOM update in a view transition.
+ * The network fetch happens *outside* the transition so the page stays live
+ * during the wait (wrapping the fetch would freeze the old snapshot).
+ * Returns whether a transition actually ran.
+ */
+async function applyWithTransition(
+  response: SingleResponse,
+  transition: boolean,
+): Promise<boolean> {
+  const reduced =
+    typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (transition && !reduced && typeof document.startViewTransition === 'function') {
+    await document.startViewTransition(async () => applyResponse(response)).finished;
+    return true;
+  }
+  await applyResponse(response);
+  return false;
 }
 
 /** Falls back to a full browser navigation (SPF "Reload" semantics). */
@@ -167,17 +219,18 @@ function fallback(url: string, detail: SpfEventDetail): void {
   location.assign(target);
 }
 
-/** Initializes SPF: wires the Navigation API and click delegation. */
+/** Initializes SPF: wires the Navigation API, click delegation, prefetching. */
 export function init(): boolean {
   if (initialized) return true;
-  if (!('navigation' in window)) {
+  const navigation = window.navigation;
+  if (!navigation) {
     console.warn(
       'modern-spf: Navigation API not supported in this browser; falling back to full page loads.',
     );
     return false;
   }
   initialized = true;
-  window.navigation.addEventListener('navigate', handleNavigate);
+  navigation.addEventListener('navigate', handleNavigate);
   document.addEventListener('click', handleClick);
   if (config.get('prefetch-viewport') && 'IntersectionObserver' in window) {
     viewportObserver = new IntersectionObserver(
@@ -192,17 +245,47 @@ export function init(): boolean {
       },
       { rootMargin: '200px' },
     );
-    observeViewportLinks();
   }
+  refreshLinks();
   event.emitSync('spfready', {});
   return true;
 }
 
-function observeViewportLinks(): void {
+/** Observes spf-links for viewport prefetch and (re)injects speculation rules. */
+function refreshLinks(): void {
   const linkClass = config.get('link-class');
   for (const link of document.querySelectorAll<HTMLAnchorElement>(`a.${linkClass}`)) {
-    if (link.href && sameOrigin(link.href)) viewportObserver?.observe(link);
+    if (link.href && sameOrigin(link.href) && viewportObserver) {
+      viewportObserver.observe(link);
+    }
   }
+  injectSpeculationRules();
+}
+
+/**
+ * Injects a speculation-rules script (prefetch/prerender) for same-origin
+ * spf-links. Chrome/Edge only; other browsers ignore the script type.
+ */
+function injectSpeculationRules(): void {
+  const supports = (
+    HTMLScriptElement as unknown as {
+      supports?: (type: string) => boolean;
+    }
+  ).supports;
+  if (typeof supports !== 'function' || !supports('speculationrules')) return;
+  const mode = config.get('speculation');
+  if (mode === 'none') return;
+  const linkClass = config.get('link-class');
+  const urls = [...document.querySelectorAll<HTMLAnchorElement>(`a.${linkClass}`)]
+    .map((a) => a.href)
+    .filter((u) => u && sameOrigin(u));
+  if (!urls.length) return;
+  const script = document.createElement('script');
+  script.type = 'speculationrules';
+  script.textContent = JSON.stringify({ [mode]: [{ source: 'list', urls }] });
+  speculationScript?.remove();
+  speculationScript = script;
+  document.head.appendChild(script);
 }
 
 /** Disposes SPF: removes listeners and cancels pending state. */
@@ -214,33 +297,83 @@ export function dispose(): void {
   document.removeEventListener('click', handleClick);
   viewportObserver?.disconnect();
   viewportObserver = null;
+  speculationScript?.remove();
+  speculationScript = null;
 }
 
-/** Navigates to a URL via SPF (pushState entry; single in-flight request). */
-export function navigate(url: string, options: RequestOptions = {}): void {
+/**
+ * Navigates to a URL via SPF (pushState entry; single in-flight request).
+ * Resolves when the navigation pipeline settles (success or fallback).
+ */
+export function navigate(url: string, options: RequestOptions = {}): Promise<void> {
   const target = normalize(url);
-  if (!('navigation' in window)) {
+  if (!window.navigation) {
     location.assign(target);
-    return;
+    return Promise.resolve();
   }
-  pending = { url: target, options, transition: !options.noTransition };
-  window.navigation.navigate(target, { history: 'push' });
+  return new Promise((resolve) => {
+    pending = { url: target, options, transition: !options.noTransition, resolve };
+    window.navigation.navigate(target, { history: 'push', state: SPF_STATE });
+  });
 }
 
 /** Loads a URL without navigation (content updates; no URL change). */
 export async function load(url: string, options: RequestOptions = {}): Promise<SingleResponse> {
   const target = normalize(url);
-  const response = await fetchResponse(target, options, 'load');
+  const response = await fetchResponse(
+    target,
+    {
+      ...options,
+      referer: options.referer ?? location.href,
+      current: options.current ?? location.href,
+    },
+    'load',
+  );
+  if (response.reload) {
+    const detail: SpfEventDetail = { url: target };
+    await event.emit('spferror', detail);
+    fallback(target, detail);
+    return response;
+  }
   await event.emit('spfprocess', { url: target, response });
   await applyResponse(response);
+  refreshLinks();
   await event.emit('spfdone', { url: target, response });
   return response;
 }
 
-/** Prefetches a URL: fetches the response into the cache (no apply). */
-export async function prefetch(url: string, options: RequestOptions = {}): Promise<SingleResponse> {
+/**
+ * Prefetches a URL: fetches the response into the cache (prefetch-eligible,
+ * i.e. usable by one new navigation) and primes the browser cache for its
+ * scripts and stylesheets. Dispatches spfrequest/spfprocess/spfdone.
+ */
+export async function prefetch(
+  url: string,
+  options: RequestOptions = {},
+): Promise<SingleResponse | undefined> {
   const target = normalize(url);
+  const detail: SpfEventDetail = { url: target };
+  if (!(await event.emit('spfrequest', detail))) return undefined; // Abort
   const response = await fetchResponse(target, options, 'prefetch');
   cache.set(target, response, 'prefetch');
+  primeResources(response);
+  await event.emit('spfprocess', { ...detail, response });
+  await event.emit('spfdone', { ...detail, response });
   return response;
+}
+
+/** Primes the browser cache for scripts/styles referenced by a response. */
+function primeResources(response: SingleResponse): void {
+  const html = `${response.head ?? ''}${response.foot ?? ''}`;
+  if (!html) return;
+  const template = document.createElement('template');
+  template.innerHTML = html;
+  for (const el of template.content.querySelectorAll('script[src]')) {
+    const src = el.getAttribute('src');
+    if (src) script.prefetch(src);
+  }
+  for (const el of template.content.querySelectorAll('link[rel~="stylesheet"][href]')) {
+    const href = el.getAttribute('href');
+    if (href) style.prefetch(href);
+  }
 }

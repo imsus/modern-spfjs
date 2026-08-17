@@ -15,10 +15,8 @@ export async function applyResponse(
   response: SingleResponse,
   options: ApplyOptions = {},
 ): Promise<void> {
-  if (response.reload) {
-    window.location.reload();
-    return;
-  }
+  // Note: `reload: true` is handled by the navigation pipeline (fall back to
+  // a full navigation + spferror) before a response reaches apply.
   if (response.redirect) {
     // Handled by the caller (fallback navigation); surface for the pipeline.
     throw new Error(`SPF: response requested redirect to ${response.redirect}`);

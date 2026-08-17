@@ -35,8 +35,8 @@ surprising ones live in `docs/adr/`.
 ## Build order
 
 1. Scaffold (package, TS 7, Vite+ toolchain, Vitest, vitepress, semantic-release) — **done**
-2. Vertical slice: `spf.init` → `spf-link` click → Navigation API intercept → `?spf=navigate` fetch → single JSON apply → `spfdone`
-3. Deepen: cache (hybrid + policy) → NDJSON streaming (part events) → resources (import map, adoptedStyleSheets, unmanaged classics) → prefetch (speculation rules + viewport) → view transitions (default-on) → failure semantics
+2. Vertical slice: `spf.init` → `spf-link` click → Navigation API intercept → `?spf=navigate` fetch → single JSON apply → `spfdone` — **done**
+3. Deepen: cache (hybrid + policy) → NDJSON streaming (part events) → resources (import map, adoptedStyleSheets, unmanaged classics) → prefetch (speculation rules + viewport) → view transitions (default-on) → failure semantics — **done** (back/forward restore from cache, durable Cache API tier, speculation-rules injection, resource priming, transitions around apply only)
 4. Ship: UMD build, typedoc API reference, protocol spec, CI/release
 5. Laravel demo: `?spf=` detection, JSON + NDJSON responses, `spf-link` views
 6. Test coverage: vitest (protocol, cache, registry) + Playwright E2E (navigation, streaming, back/forward, transitions, reduced-motion)

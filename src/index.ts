@@ -29,9 +29,9 @@ export function dispose(): void {
   nav.dispose();
 }
 
-/** Navigates to a URL via SPF (pushState; single in-flight request). */
-export function navigate(url: string, options?: Parameters<typeof nav.navigate>[1]): void {
-  nav.navigate(url, options);
+/** Navigates to a URL via SPF; resolves when the pipeline settles. */
+export function navigate(url: string, options?: Parameters<typeof nav.navigate>[1]): Promise<void> {
+  return nav.navigate(url, options);
 }
 
 /** Loads a URL without navigation; returns the applied response. */
@@ -47,11 +47,11 @@ export async function process(response: SingleResponse): Promise<void> {
   await applyResponse(response);
 }
 
-/** Prefetches a URL into the cache. */
+/** Prefetches a URL into the cache (aborted → undefined). */
 export function prefetch(
   url: string,
   options?: Parameters<typeof nav.prefetch>[1],
-): Promise<SingleResponse> {
+): Promise<SingleResponse | undefined> {
   return nav.prefetch(url, options);
 }
 
