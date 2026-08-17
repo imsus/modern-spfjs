@@ -11,7 +11,7 @@ import type { SingleResponse } from '../types';
 type NavState = { spf?: boolean };
 
 interface MockNavigateEvent extends Event {
-  destination: { url: string; getState: () => NavState | undefined };
+  destination: { url: string; getState: () => NavState | undefined; sameDocument: boolean };
   navigationType: 'push' | 'traverse';
   intercept: (opts: { handler: () => Promise<void> }) => void;
   scroll: ReturnType<typeof vi.fn>;
@@ -22,11 +22,16 @@ interface MockNavigateEvent extends Event {
 function makeNavigationMock() {
   const listeners = new Set<(e: MockNavigateEvent) => void>();
   let lastEvent: MockNavigateEvent | null = null;
-  const dispatch = (url: string, navigationType: 'push' | 'traverse', state?: NavState) => {
+  const dispatch = (
+    url: string,
+    navigationType: 'push' | 'traverse',
+    state?: NavState,
+    sameDocument = true,
+  ) => {
     // SAFETY: Object.assign adds the mock members onto the Event instance; the
     // single assertion narrows the intersection to the mock contract.
     const evt = Object.assign(new Event('navigate', { cancelable: true }), {
-      destination: { url, getState: () => state },
+      destination: { url, getState: () => state, sameDocument },
       navigationType,
       intercepted: false,
       scroll: vi.fn(),
@@ -46,8 +51,8 @@ function makeNavigationMock() {
     navigate(url: string, opts?: { state?: NavState }) {
       dispatch(url, 'push', opts?.state);
     },
-    dispatchTraverse(url: string, state?: NavState) {
-      dispatch(url, 'traverse', state);
+    dispatchTraverse(url: string, state?: NavState, sameDocument = true) {
+      dispatch(url, 'traverse', state, sameDocument);
     },
     addEventListener(_t: string, fn: (e: MockNavigateEvent) => void) {
       listeners.add(fn);
@@ -259,10 +264,33 @@ describe('history navigation (traverse)', () => {
     );
   });
 
-  it('leaves non-SPF back/forward navigations to the browser', () => {
+  it('forces a full load for same-document back/forward to a non-SPF entry', () => {
     expect(nav.init()).toBe(true);
+    const reloads: unknown[] = [];
+    // The fallback contract is observable via the sync `spfreload` event,
+    // whose detail.url is the reload target (jsdom's location is not spyable).
+    document.addEventListener('spfreload', (e) => {
+      // SAFETY: SPF dispatches its events as CustomEvents with a detail object.
+      reloads.push((e as CustomEvent).detail);
+    });
+
     mockNav.dispatchTraverse('http://localhost:3000/other', undefined);
-    expect(mockNav.lastEvent!.intercepted).toBe(false);
+    const evt = mockNav.lastEvent!;
+    expect(evt.intercepted).toBe(false); // no SPF pipeline run
+    expect(evt.defaultPrevented).toBe(true); // traversal cancelled
+
+    expect(reloads).toHaveLength(1);
+    // SAFETY: spfreload details always carry the reload target as `url`.
+    const detail = reloads[0] as { url: string };
+    expect(detail.url).toBe('http://localhost:3000/other');
+  });
+
+  it('leaves cross-document back/forward to a non-SPF entry to the browser', () => {
+    expect(nav.init()).toBe(true);
+    mockNav.dispatchTraverse('http://localhost:3000/other', undefined, false);
+    const evt = mockNav.lastEvent!;
+    expect(evt.intercepted).toBe(false);
+    expect(evt.defaultPrevented).toBe(false);
   });
 });
 

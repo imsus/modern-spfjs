@@ -123,7 +123,18 @@ function handleNavigate(evt: NavigateEvent): void {
 
 function handleTraverse(evt: NavigateEvent, url: string): void {
   const state = evt.destination.getState?.();
-  if (!state?.spf) return; // not one of ours — let the browser handle it
+  if (!state?.spf) {
+    // Not one of ours. A same-document destination never reloads on its own:
+    // SPF replaced the DOM, so back/forward would rewind the URL and leave
+    // stale content showing. Force a full load through the standard fallback
+    // (spfreload + location.assign). Cross-document destinations load the
+    // real page themselves — leave those to the browser.
+    if (evt.destination.sameDocument) {
+      evt.preventDefault();
+      fallback(url, { url });
+    }
+    return;
+  }
   if (!event.emitSync('spfhistory', { url, previous: location.href })) return;
   interceptNavigation(evt, () => runPipeline(url, {}, true, 'history'));
 }
