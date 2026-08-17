@@ -1,0 +1,52 @@
+{
+  "name": "modern-spf",
+  "version": "0.0.1",
+  "description": "A modern re-creation of YouTube's SPF (Structured Page Fragments): fast same-origin navigation by fetching only the changed fragments, built on the Navigation API.",
+  "keywords": [
+    "fragments",
+    "navigation",
+    "navigation-api",
+    "pjax",
+    "spf",
+    "turbolinks"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "unpkg": "./dist/index.iife.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "dev": "vp dev",
+    "build": "vp pack src/index.ts --format esm --format cjs --format iife --globalName spf --dts --sourcemap --out-dir dist",
+    "test": "vp test run",
+    "test:watch": "vp test",
+    "typecheck": "tsc --noEmit",
+    "lint": "vp lint",
+    "fmt": "vp fmt",
+    "check": "vp check"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "jsdom": "^25.0.0",
+    "typescript": "^7.0.2",
+    "vite-plus": "^0.2.9",
+    "vitest": "4.1.10"
+  },
+  "packageManager": "pnpm@11.22.0"
+}

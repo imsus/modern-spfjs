@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+demo/vendor/
+demo/storage/
+demo/bootstrap/cache/
+*.log
+.DS_Store

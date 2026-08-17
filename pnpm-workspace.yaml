@@ -1,0 +1,5 @@
+# Vite+ overrides: alias vite to the Vite+ core and pin vitest to the bundled
+# version so the project and `vp test` share one copy (see viteplus.dev guide).
+overrides:
+  vite: npm:@voidzero-dev/vite-plus-core@latest
+  vitest: 4.1.10
