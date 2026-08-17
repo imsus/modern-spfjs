@@ -11,9 +11,9 @@ constructable stylesheets, and the Cache API. Evergreen browsers only.
 
 ## Status
 
-Phase 4 (ship) complete — docs site, publish checks, CI/release config
-(see `docs/design.md` for the build order; E2E and the Laravel demo are next).
-Not yet published.
+All six build-order phases complete — library, docs site, publish checks,
+CI/release config, Playwright E2E, and the Laravel demo (see
+`docs/design.md`). Not yet published.
 
 ## Quick shape
 
