@@ -1,5 +1,14 @@
+# Build-script approvals (pnpm 11 `allowBuilds`; the old
+# dangerouslyAllowAllBuilds key is no longer honored). esbuild's postinstall
+# is a legacy binary check needed by Vite 5 (vitepress).
+allowBuilds:
+  esbuild: true
 # Vite+ overrides: alias vite to the Vite+ core and pin vitest to the bundled
 # version so the project and `vp test` share one copy (see viteplus.dev guide).
 overrides:
   vite: npm:@voidzero-dev/vite-plus-core@latest
   vitest: 4.1.10
+  # Vitepress is not Rolldown-compatible (uses deprecated Rollup plugin APIs
+  # and transformWithEsbuild): give it the real Vite 5 it was built against,
+  # overriding the workspace-wide vite-plus alias for vitepress only.
+  'vitepress>vite': ^5.4.14

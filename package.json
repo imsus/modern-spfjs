@@ -39,7 +39,10 @@
     "typecheck": "tsc --noEmit",
     "lint": "vp lint",
     "fmt": "vp fmt",
-    "check": "vp check"
+    "check": "vp check",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
     "@oxlint/plugins": "1.78.0",
@@ -48,6 +51,7 @@
     "oxlint": "1.78.0",
     "typescript": "^7.0.2",
     "vite-plus": "^0.2.9",
+    "vitepress": "1.6.4",
     "vitest": "4.1.10"
   },
   "packageManager": "pnpm@11.22.0"

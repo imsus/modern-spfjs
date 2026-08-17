@@ -4,5 +4,8 @@ coverage/
 demo/vendor/
 demo/storage/
 demo/bootstrap/cache/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+*.tgz
 *.log
 .DS_Store
