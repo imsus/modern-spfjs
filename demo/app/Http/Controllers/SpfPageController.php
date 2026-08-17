@@ -31,8 +31,8 @@ class SpfPageController extends Controller
 
     public function page(Request $request, string $page = 'home'): View|Response|StreamedResponse
     {
-        $page = in_array($page, self::PAGES, true) ? $page : 'home';
-
+        // The route constrains $page via whereIn + defaults('page', 'home'),
+        // so no re-validation is needed here.
         if ($this->isSpfRequest($request)) {
             return $page === 'stream'
                 ? $this->streamResponse()
@@ -52,7 +52,7 @@ class SpfPageController extends Controller
     private function jsonResponse(string $page): Response
     {
         return response(json_encode($this->pageData($page)), 200, [
-            'Content-Type' => 'application/x-spf+json; charset=UTF-8',
+            'Content-Type' => 'application/x-spf+json',
         ]);
     }
 
@@ -62,10 +62,6 @@ class SpfPageController extends Controller
             'about' => [
                 'title' => 'About — SPF',
                 'body' => ['content' => '<p id="text">About via SPF</p>'],
-            ],
-            'stream' => [
-                'title' => 'Stream — SPF',
-                'body' => ['content' => '<p id="text" class="streamed">Streamed content</p>'],
             ],
             'plain' => [
                 'title' => 'Plain — SPF',
@@ -115,6 +111,6 @@ class SpfPageController extends Controller
                     usleep(120_000);
                 }
             }
-        }, 200, ['Content-Type' => 'application/x-spf+ndjson; charset=UTF-8']);
+        }, 200, ['Content-Type' => 'application/x-spf+ndjson']);
     }
 }

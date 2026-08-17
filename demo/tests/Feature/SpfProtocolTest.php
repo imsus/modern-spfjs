@@ -20,7 +20,7 @@ class SpfProtocolTest extends TestCase
         $response = $this->get('/about?spf=navigate');
 
         $response->assertOk();
-        $response->assertHeader('Content-Type', 'application/x-spf+json; charset=UTF-8');
+        $response->assertHeader('Content-Type', 'application/x-spf+json');
         $response->assertJson(['title' => 'About — SPF']);
     }
 
@@ -39,7 +39,7 @@ class SpfProtocolTest extends TestCase
         $response = $this->get('/stream?spf=navigate');
 
         $response->assertOk();
-        $response->assertHeader('Content-Type', 'application/x-spf+ndjson; charset=UTF-8');
+        $response->assertHeader('Content-Type', 'application/x-spf+ndjson');
 
         $body = $response->streamedContent();
         foreach (['title', 'url', 'head', 'attr', 'body', 'foot', 'done'] as $part) {
