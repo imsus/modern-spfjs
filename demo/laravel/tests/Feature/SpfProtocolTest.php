@@ -50,7 +50,7 @@ class SpfProtocolTest extends TestCase
 
     public function test_built_library_is_served_when_dist_exists(): void
     {
-        $iife = base_path('../dist/index.iife.js');
+        $iife = base_path('../../dist/index.iife.js');
 
         if (! file_exists($iife)) {
             $this->markTestSkipped('repo-root dist/ not built — run pnpm build first.');

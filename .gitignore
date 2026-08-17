@@ -1,9 +1,9 @@
 node_modules/
 dist/
 coverage/
-demo/vendor/
-demo/storage/
-demo/bootstrap/cache/
+demo/laravel/vendor/
+demo/laravel/storage/
+demo/laravel/bootstrap/cache/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
 *.tgz

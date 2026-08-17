@@ -20,7 +20,7 @@ class SpfPageController extends Controller
     /** Serves the library's IIFE build from the repo root dist/ directory. */
     public function script(): Response
     {
-        $iife = base_path('../dist/index.iife.js');
+        $iife = base_path('../../dist/index.iife.js');
 
         if (! File::exists($iife)) {
             return response('modern-spf not built — run `pnpm build` in the repo root first.', 500);

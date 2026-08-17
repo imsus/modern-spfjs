@@ -1,7 +1,7 @@
 # modern-spf — Wire Protocol (v0.1 draft)
 
 The contract between the client library and a server. Language-agnostic; the
-Laravel demo in `demo/` implements it.
+Laravel demo in `demo/laravel/` implements it.
 
 ## Request
 

@@ -29,10 +29,10 @@ importers:
         specifier: ^11.0.1
         version: 11.0.1(semantic-release@25.0.9(supports-color@8.1.1)(typescript@7.0.2))(supports-color@8.1.1)
       '@types/node':
-        specifier: ^22.0.0
+        specifier: ^22.20.1
         version: 22.20.1
       jsdom:
-        specifier: ^25.0.0
+        specifier: ^25.0.1
         version: 25.0.1(supports-color@8.1.1)
       oxlint:
         specifier: 1.78.0
