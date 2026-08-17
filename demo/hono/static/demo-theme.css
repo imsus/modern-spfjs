@@ -1,0 +1,6 @@
+/* Managed stylesheet demo: applied via document.adoptedStyleSheets. */
+
+.theme-demo {
+  color: green;
+  font-weight: bold;
+}

@@ -3,8 +3,9 @@
  *
  * Every page route answers both full-page and SPF requests: the SPF URL
  * identifier (?spf=navigate|prefetch|load) yields a single JSON object, or an
- * NDJSON stream for /stream. /modern-spf.js serves the library's IIFE build
- * from the repo-root dist/ directory.
+ * NDJSON stream for /stream. The demo also exercises the rest of the library:
+ * caching hints, head/foot installation, failure semantics (reload/redirect/
+ * 404) and POST forms.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -12,18 +13,88 @@ import { ReadableStream } from 'node:stream/web';
 import { Hono } from 'hono';
 
 import type { Context } from 'hono';
+import { PAGE_NAMES, PAGES, escapeHtml, layout } from './pages.ts';
 
-const PAGES = ['home', 'about', 'stream', 'plain'] as const;
-
-type PageName = (typeof PAGES)[number];
+import type { DemoPage, PageName } from './pages.ts';
 
 const app = new Hono();
 
-app.get('/modern-spf.js', scriptHandler);
+/** A single (non-streamed) SPF response; all fields optional. */
+interface SpfResponse {
+  title?: string;
+  body?: Record<string, string>;
+  head?: string;
+  foot?: string;
+  attr?: Record<string, Record<string, string>>;
+  cacheKey?: string;
+  reload?: boolean;
+  redirect?: string;
+}
+
+/** Full pages for the failure fallback demo (not part of the SPF nav). */
+const FAILURE_PAGES = {
+  'failure-reload': {
+    title: 'Failure — reload',
+    content:
+      '<h1>Reload fallback</h1><p id="text">The SPF response for this page says <code>reload: true</code> — the client fired <code>spferror</code>/<code>spfreload</code> and fell back to a full navigation.</p>',
+    fragment: '<p id="text">Reload via SPF</p>',
+  },
+  'failure-redirect': {
+    title: 'Failure — redirect',
+    content:
+      '<h1>Redirect fallback</h1><p id="text">The SPF response for this page says <code>redirect: "/about"</code> — the client fell back to a full navigation to /about.</p>',
+    fragment: '<p id="text">Redirect via SPF</p>',
+  },
+} satisfies Record<string, DemoPage>;
+
+// — static assets —
+
+app.get('/modern-spf.js', (c) =>
+  serveFile(
+    c,
+    new URL('../../../dist/index.iife.js', import.meta.url),
+    'text/javascript; charset=utf-8',
+    'modern-spf not built — run `pnpm build` in the repo root first.',
+  ),
+);
+app.get('/demo.js', (c) =>
+  serveFile(c, new URL('../static/demo.js', import.meta.url), 'text/javascript; charset=utf-8'),
+);
+app.get('/demo-widget.js', (c) =>
+  serveFile(
+    c,
+    new URL('../static/demo-widget.js', import.meta.url),
+    'text/javascript; charset=utf-8',
+  ),
+);
+app.get('/demo-theme.css', (c) =>
+  serveFile(c, new URL('../static/demo-theme.css', import.meta.url), 'text/css; charset=utf-8'),
+);
+
+// — demo pages —
+
 app.get('/', (c) => pageHandler(c, 'home'));
-app.get('/about', (c) => pageHandler(c, 'about'));
-app.get('/stream', (c) => pageHandler(c, 'stream'));
-app.get('/plain', (c) => pageHandler(c, 'plain'));
+
+for (const name of PAGE_NAMES) {
+  app.get(`/${name}`, (c: Context) => pageHandler(c, name));
+}
+
+app.post('/forms/submit', (c) => formsPostResponse(c));
+app.get('/failure-reload', (c) => failureHandler(c, 'failure-reload'));
+app.get('/failure-redirect', (c) => failureHandler(c, 'failure-redirect'));
+
+app.notFound((c) => {
+  const notice =
+    c.req.query('spf') === 'full'
+      ? '<p><strong>Full-load fallback:</strong> the SPF request for this URL failed (404) and the client fell back to a full navigation.</p>'
+      : '';
+  return c.html(
+    layout('Not found', `<h1>404</h1><p id="text">This page does not exist.</p>${notice}`),
+    404,
+  );
+});
+
+// — protocol handlers —
 
 /** The SPF URL identifier values (__type__ in ?spf=__type__). */
 function isSpfRequest(c: Context): boolean {
@@ -31,52 +102,64 @@ function isSpfRequest(c: Context): boolean {
   return spf === 'navigate' || spf === 'prefetch' || spf === 'load';
 }
 
-function pageHandler(c: Context, page: PageName): Response {
+async function pageHandler(c: Context, page: PageName): Promise<Response> {
   if (isSpfRequest(c)) {
     if (page === 'stream') return streamResponse();
-    return jsonResponse(page);
+    return jsonResponse(spfData(page));
   }
-  return c.html(fullPage(page));
+  return c.html(fullPageWithNotice(c, PAGES[page]));
+}
+
+function failureHandler(c: Context, name: 'failure-reload' | 'failure-redirect'): Response {
+  if (isSpfRequest(c)) {
+    return name === 'failure-reload'
+      ? jsonResponse({ reload: true })
+      : jsonResponse({ redirect: '/about' });
+  }
+  return c.html(fullPageWithNotice(c, FAILURE_PAGES[name]));
 }
 
 /** Single JSON response: application/x-spf+json, body = {elementId: html}. */
-function jsonResponse(page: PageName): Response {
-  const { title, body } = pageData(page);
-  return new Response(JSON.stringify({ title, body: { content: body } }), {
+function jsonResponse(data: SpfResponse): Response {
+  return new Response(JSON.stringify(data), {
     status: 200,
     headers: { 'content-type': 'application/x-spf+json' },
   });
 }
 
-/** SPF response data: the fragment HTML swapped into #content. */
-function pageData(page: PageName) {
-  switch (page) {
-    case 'about':
-      return { title: 'About — SPF', body: '<p id="text">About via SPF</p>' };
-    case 'plain':
-      return { title: 'Plain — SPF', body: '<p id="text">Plain via SPF</p>' };
-    case 'stream':
-      return { title: 'Stream — SPF', body: '<p id="text" class="streamed">Streamed content</p>' };
-    default:
-      return { title: 'Home — SPF', body: '<p id="text">Home via SPF</p>' };
+/** Per-page SPF data, with feature-specific extra fields. */
+function spfData(page: PageName): SpfResponse {
+  const demo: DemoPage = PAGES[page];
+  const data: SpfResponse = {
+    title: `${demo.title} — SPF`,
+    body: { content: demo.fragment ?? demo.content },
+  };
+
+  if (page === 'navigation') {
+    data.attr = { content: { 'data-navigated': 'yes' } };
   }
+  if (page === 'caching') {
+    data.cacheKey = 'caching-demo';
+  }
+  if (page === 'resources') {
+    data.head = '<style>#footcount { font-weight: bold; }</style>';
+    data.foot =
+      '<script>window.__spfFootCount = (window.__spfFootCount || 0) + 1; ' +
+      'var el = document.getElementById("footcount"); ' +
+      'if (el) el.textContent = "unmanaged classic script executed " + window.__spfFootCount + " time(s)";</script>';
+  }
+
+  return data;
 }
 
-/** Full-page content (distinct from the SPF fragments). */
-function pageContent(page: PageName) {
-  switch (page) {
-    case 'about':
-      return { title: 'About', content: '<h1>About</h1><p id="text">About page content</p>' };
-    case 'plain':
-      return {
-        title: 'Plain',
-        content: '<h1>Plain</h1><p id="text">Plain page content (reached via a full page load)</p>',
-      };
-    case 'stream':
-      return { title: 'Stream', content: '<h1>Stream</h1><p id="text">Stream page content</p>' };
-    default:
-      return { title: 'Home', content: '<h1>Home</h1><p id="text">Home page content</p>' };
-  }
+/** POST /forms: echoes the submitted field (escaped) in the SPF fragment. */
+async function formsPostResponse(c: Context): Promise<Response> {
+  const form = await c.req.formData();
+  const name = escapeHtml(String(form.get('name') ?? ''));
+  return jsonResponse({
+    title: 'Forms — SPF',
+    body: { content: `<p id="text">Hello, ${name} — submitted via an SPF POST.</p>` },
+  });
 }
 
 /** NDJSON stream parts, one per line, terminated by a done part. */
@@ -85,8 +168,17 @@ const STREAM_PARTS = [
   { part: 'url', value: '/stream' },
   { part: 'head', html: '<style>.streamed { color: green; }</style>' },
   { part: 'attr', id: 'content', attrs: { 'data-streamed': 'yes' } },
-  { part: 'body', id: 'content', html: '<p id="text" class="streamed">Streamed content</p>' },
-  { part: 'foot', html: '' },
+  {
+    part: 'body',
+    id: 'content',
+    html: PAGES.stream.content,
+  },
+  {
+    part: 'foot',
+    html:
+      '<script>var el = document.getElementById("streamfoot"); ' +
+      'if (el) el.textContent = "foot executed (classic script ran after the body was applied)";</script>',
+  },
   { part: 'done' },
 ] as const;
 
@@ -114,51 +206,23 @@ function streamResponse(): Response {
   });
 }
 
-/** Full pages: the same #content fragment structure the SPF responses swap in. */
-function fullPage(page: PageName): string {
-  const { title, content } = pageContent(page);
-  return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${title}</title>
-  <script src="/modern-spf.js"></script>
-  <style>
-    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
-    nav a { margin-right: 1rem; }
-    main { margin-top: 1rem; }
-  </style>
-</head>
-<body>
-  <nav>
-    <a class="spf-link" href="/">Home</a>
-    <a class="spf-link" href="/about">About</a>
-    <a class="spf-link" href="/stream">Stream</a>
-    <a class="spf-link spf-no-transition" href="/about">About (no transition)</a>
-    <a class="spf-nolink" href="/plain">Plain (full load)</a>
-  </nav>
-  <main id="content">${content}</main>
-  <script>
-    // Viewport prefetch and speculation rules are on by default; the demo
-    // keeps them on so prefetching is observable in the network tab.
-    spf.init({ speculation: 'prefetch' });
-  </script>
-</body>
-</html>`;
+/** Full pages: renders a page, adding a fallback notice for ?spf=full. */
+function fullPageWithNotice(c: Context, page: DemoPage): string {
+  const notice =
+    c.req.query('spf') === 'full'
+      ? '<p><strong>Full-load fallback:</strong> this page was reached through the SPF reload fallback (reload-identifier).</p>'
+      : '';
+  return layout(page.title, notice + page.content);
 }
 
-/** Serves the library's IIFE build from the repo-root dist/ directory. */
-function scriptHandler(c: Context): Response {
-  const iife = new URL('../../../dist/index.iife.js', import.meta.url);
-
-  if (!existsSync(iife)) {
-    return c.text('modern-spf not built — run `pnpm build` in the repo root first.', 500);
+/** Serves a static file from disk (used for the built library and demo assets). */
+function serveFile(c: Context, url: URL, contentType: string, missingMessage?: string): Response {
+  if (!existsSync(url)) {
+    return c.text(missingMessage ?? 'file not found — build it first.', 500);
   }
-
-  return new Response(readFileSync(iife), {
+  return new Response(readFileSync(url), {
     status: 200,
-    headers: { 'content-type': 'text/javascript; charset=utf-8' },
+    headers: { 'content-type': contentType },
   });
 }
 
