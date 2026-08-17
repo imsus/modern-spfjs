@@ -1,6 +1,6 @@
 {
   "name": "@imsus/modern-spf",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "A modern re-creation of YouTube's SPF (Structured Page Fragments): fast same-origin navigation by fetching only the changed fragments, built on the Navigation API.",
   "keywords": [
     "fragments",
