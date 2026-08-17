@@ -11,8 +11,9 @@ constructable stylesheets, and the Cache API. Evergreen browsers only.
 
 ## Status
 
-Kickoff in progress — design tree closed (see `DESIGN.md`), vertical slice
-being built. Not yet published.
+Phase 4 (ship) complete — docs site, publish checks, CI/release config
+(see `docs/design.md` for the build order; E2E and the Laravel demo are next).
+Not yet published.
 
 ## Quick shape
 
@@ -25,14 +26,19 @@ being built. Not yet published.
 ```
 
 The server detects `?spf=navigate` (configurable) and returns either a single
-SPF JSON object or an NDJSON stream of parts. See `spec/PROTOCOL.md`.
+SPF JSON object or an NDJSON stream of parts. See `docs/protocol.md`.
 
 ## Docs
 
-- `DESIGN.md` — the agreed design (shared-understanding record)
+The docs site (Vitepress) lives in `docs/` — run `pnpm docs:dev` to browse it.
+Source files:
+
+- `docs/` — the docs site (guides + hand-maintained API reference)
+- `docs/design.md` — the agreed design (shared-understanding record)
 - `docs/adr/` — architecture decision records
-- `spec/PROTOCOL.md` — the wire protocol
-- `CONTEXT.md` — the domain glossary
+- `docs/protocol.md` — the wire protocol
+- `docs/glossary.md` — the domain glossary
+- `docs/research.md` — research notes on the original SPF
 
 ## Development
 
@@ -48,6 +54,9 @@ pnpm lint         # vp lint (Oxlint)
 pnpm fmt          # vp fmt (Oxfmt)
 pnpm check        # vp check — format + lint + typecheck
 pnpm build        # vp pack — ESM + CJS + IIFE (global `spf`) + .d.ts via TS7
+pnpm docs:dev     # vitepress dev server
+pnpm docs:build   # build the docs site
+pnpm check:publish# build + publint + arethetypeswrong (packaged-output checks)
 ```
 
 ## License

@@ -67,7 +67,7 @@ export async function fetchResponse(
     if (contentType.includes('application/x-spf+ndjson') && res.body) {
       return await parseStream(res.body, options);
     }
-    // SAFETY: the SPF server contract (spec/PROTOCOL.md) guarantees a SingleResponse JSON body.
+    // SAFETY: the SPF server contract (docs/protocol.md) guarantees a SingleResponse JSON body.
     return (await res.json()) as SingleResponse;
   } finally {
     if (timer) clearTimeout(timer);

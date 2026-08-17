@@ -6,7 +6,7 @@ navigation: only the changed fragments of a page are fetched and applied,
 never the whole page.
 
 This glossary inherits its baseline vocabulary from the original SPF domain
-(see `spfjs-research.md` for the reference). Terms are being sharpened as the
+(see `research.md` for the reference). Terms are being sharpened as the
 design is grilled out; unresolved or contested terms are marked.
 
 ## Language
