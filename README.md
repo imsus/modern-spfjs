@@ -25,7 +25,7 @@ browsers only, no polyfills.
 ## Installation
 
 ```sh
-npm install modern-spf
+npm install @imsus/modern-spf
 ```
 
 Script tag (IIFE build, global `spf`):
@@ -41,7 +41,7 @@ Script tag (IIFE build, global `spf`):
 ES module:
 
 ```js
-import { init, navigate } from 'modern-spf';
+import { init, navigate } from '@imsus/modern-spf';
 
 init();
 navigate('/destination');

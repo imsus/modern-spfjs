@@ -18,7 +18,7 @@ degradation when a specific feature is missing.
 ## Install
 
 ```sh
-npm install modern-spf
+npm install @imsus/modern-spf
 ```
 
 ### Script tag (IIFE build)
@@ -36,7 +36,7 @@ The IIFE build exposes the `spf` global.
 ### ES module
 
 ```js
-import { init, navigate } from 'modern-spf';
+import { init, navigate } from '@imsus/modern-spf';
 
 init();
 

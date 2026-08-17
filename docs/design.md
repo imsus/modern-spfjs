@@ -26,7 +26,7 @@ surprising ones live in `adr/`.
 | Transitions      | Same-document view transitions, default-on, `prefers-reduced-motion` respected, `spf-no-transition` class + per-call option                            |
 | Failure          | Fall back to full browser navigation; `spferror` hook                                                                                                  |
 | Public surface   | `spf.init/dispose/navigate/load/process/prefetch`, `spf.cache.remove/clear`, slim `spf.script.*` / `spf.style.*`, `spf.config`, `spf.event`            |
-| Package          | `modern-spf` on npm                                                                                                                                    |
+| Package          | `@imsus/modern-spf` on npm (scoped — npm requires new unscoped names to match the username)                                                            |
 | Docs             | Vitepress site + hand-maintained API reference (TypeDoc is incompatible with the TS7 native compiler); protocol spec lives in the site (`protocol.md`) |
 | Testing          | Vitest units + Playwright E2E                                                                                                                          |
 | Release          | Semantic-release + GitHub Actions                                                                                                                      |
