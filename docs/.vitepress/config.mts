@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitepress';
 
 export default defineConfig({
+  // Deployed to GitHub Pages as a project site (https://imsus.github.io/
+  // modern-spfjs/) — the base must match the repo name.
+  base: '/modern-spfjs/',
   title: 'modern-spf',
   description:
     'A modern re-creation of YouTube\'s SPF: fast same-origin navigation by fetching only the fragments that change.',
