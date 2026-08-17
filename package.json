@@ -37,6 +37,7 @@
     "build": "vp pack src/index.ts --format esm --format cjs --format iife --globalName spf --dts --sourcemap --out-dir dist",
     "test": "vp test run",
     "test:watch": "vp test",
+    "test:e2e": "pnpm build && playwright test",
     "typecheck": "tsc --noEmit",
     "lint": "vp lint",
     "fmt": "vp fmt",
@@ -52,6 +53,7 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "0.18.5",
     "@oxlint/plugins": "1.78.0",
+    "@playwright/test": "^1.62.1",
     "@semantic-release/changelog": "^7.0.0",
     "@semantic-release/git": "^11.0.1",
     "@types/node": "^22.0.0",
@@ -65,7 +67,7 @@
     "vitest": "4.1.10"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "packageManager": "pnpm@11.22.0"
 }
