@@ -2,8 +2,14 @@
 
 A server may answer an SPF request with an **NDJSON stream** of parts
 (`Content-Type: application/x-spf+ndjson`) instead of a single JSON object.
-Each line is one part, processed as it arrives, so the page can start updating
-before the response finishes — useful for slow servers and big pages.
+Each line is one part, parsed and fired as an event as it arrives — the
+response is never held whole in memory before processing starts, which is
+useful for slow servers and big pages.
+
+> **Note:** the DOM is updated once the stream completes — streaming is
+> incremental for _parsing and events_, not for fragment application. The
+> aggregated response is applied (and cached) like a single JSON response;
+> per-part events let you observe progress as the stream arrives.
 
 ## Stream format
 
@@ -36,7 +42,7 @@ single JSON format is always accepted as a fallback. See the
 
 ## Part events
 
-Each part fires two events, before and after it is applied:
+Each part fires two events as it arrives:
 
 - `spfpartprocess` — `{ part, response }`; returning `false` **skips** the part;
 - `spfpartdone` — `{ part, response }` — fired after the part was aggregated.

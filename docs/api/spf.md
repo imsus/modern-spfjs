@@ -9,6 +9,11 @@ modern, Promise-aware, typed semantics (see
 The IIFE build exposes this object as the global `spf`; the ESM build exports
 the same members as named exports.
 
+> The API reference is hand-maintained (typedoc-style) rather than generated:
+> TypeDoc 0.28 peers only `typescript ≤ 6.0.x`, and the TS7 native compiler
+> no longer exposes the legacy JS compiler API (`createProgram` etc.) that
+> TypeDoc depends on — so TypeDoc cannot run against this codebase.
+
 ```ts
 spf.init(optConfig?)      // → boolean
 spf.dispose()             // → void
@@ -93,4 +98,5 @@ response, or `undefined` if the `spfrequest` handler cancelled the prefetch.
 const version: string;
 ```
 
-The library version (currently `0.0.1`).
+The library version (currently `0.0.1`). Bumped manually to match the npm
+version at release time (semantic-release only updates `package.json`).

@@ -24,7 +24,7 @@ npm install modern-spf
 ### Script tag (IIFE build)
 
 ```html
-<script src="node_modules/modern-spf/dist/index.global.js"></script>
+<script src="node_modules/modern-spf/dist/index.iife.js"></script>
 <a class="spf-link" href="/destination">Go!</a>
 <script>
   spf.init();
@@ -86,5 +86,5 @@ pnpm check        # vp check — format + lint + typecheck
 pnpm build        # vp pack — ESM + CJS + IIFE (global `spf`) + .d.ts via TS7
 pnpm docs:dev     # vitepress dev server
 pnpm docs:build   # build this site
-pnpm check:publish# build + publint + arethetypeswrong
+pnpm check:publish  # build + publint + arethetypeswrong
 ```

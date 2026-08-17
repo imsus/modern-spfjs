@@ -4,6 +4,7 @@ The response cache: an in-memory LRU (SPF semantics) plus a Cache API durable
 tier. See the [Caching guide](/guide/caching) for the policy.
 
 ```ts
+// Internal module type (not re-exported from the package entry):
 type CacheType = 'new' | 'history' | 'prefetch';
 ```
 

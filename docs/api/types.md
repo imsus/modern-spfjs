@@ -40,21 +40,21 @@ type StreamPart =
 
 Options for requesting a URL.
 
-| Field             | Type                     | Meaning                                                                  |
-| ----------------- | ------------------------ | ------------------------------------------------------------------------ |
-| `method`          | `'GET' \| 'POST'`        | HTTP method; defaults to `GET`.                                          |
-| `headers`         | `Record<string, string>` | Extra headers to send.                                                   |
-| `postData`        | `BodyInit`               | Body for POST requests.                                                  |
-| `withCredentials` | `boolean`                | Include credentials (cookies) in the request.                            |
-| `referer`         | `string`                 | The referer header value (previous page).                                |
-| `current`         | `string`                 | The current URL (previous page).                                         |
-| `onRequest`       | `SpfEventHandler`        | Callback before the request is sent; `false` cancels (fallback: reload). |
-| `onProcess`       | `SpfEventHandler`        | Callback when a response is received before processing; `false` cancels. |
-| `onDone`          | `SpfEventHandler`        | Callback after processing is done.                                       |
-| `onPartProcess`   | `SpfEventHandler`        | Callback per streamed part before it is applied; `false` skips the part. |
-| `onPartDone`      | `SpfEventHandler`        | Callback per streamed part after it is applied.                          |
-| `onError`         | `SpfEventHandler`        | Callback on request failure.                                             |
-| `noTransition`    | `boolean`                | Disable view transitions for this navigation.                            |
+| Field             | Type                     | Meaning                                                                                                        |
+| ----------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `method`          | `'GET' \| 'POST'`        | HTTP method; defaults to `GET`.                                                                                |
+| `headers`         | `Record<string, string>` | Extra headers to send.                                                                                         |
+| `postData`        | `BodyInit`               | Body for POST requests.                                                                                        |
+| `withCredentials` | `boolean`                | Include credentials (cookies) in the request.                                                                  |
+| `referer`         | `string`                 | Sent as `X-SPF-Referer` — the URL of the page being left (history navigations).                                |
+| `current`         | `string`                 | Sent as `X-SPF-Previous` — the URL being left.                                                                 |
+| `onRequest`       | `SpfEventHandler`        | Invoked after the `spfrequest` event (navigate/load only); the return value is ignored — cancel via the event. |
+| `onProcess`       | `SpfEventHandler`        | Invoked after the `spfprocess` event (navigate/load only); the return value is ignored — cancel via the event. |
+| `onDone`          | `SpfEventHandler`        | Invoked after processing is done (navigate/load only).                                                         |
+| `onPartProcess`   | `SpfEventHandler`        | **Not invoked by the current implementation** — use the `spfpartprocess` event.                                |
+| `onPartDone`      | `SpfEventHandler`        | Invoked per streamed part after it is aggregated (navigate/load only).                                         |
+| `onError`         | `SpfEventHandler`        | Invoked on request failure (navigate/load only).                                                               |
+| `noTransition`    | `boolean`                | Disable view transitions for this navigation.                                                                  |
 
 ## `SpfEventDetail`
 
@@ -63,12 +63,12 @@ Detail object passed to SPF event handlers and request callbacks.
 | Field          | Type              | Meaning                                                         |
 | -------------- | ----------------- | --------------------------------------------------------------- |
 | `url`          | `string`          | The URL of the request.                                         |
-| `previous`     | `string`          | The URL of the previous page (history/request events).          |
-| `referer`      | `string`          | The URL of the previous page (history/request events).          |
+| `previous`     | `string`          | The URL of the page being left (`spfhistory`).                  |
+| `referer`      | `string`          | The URL of the page being left (`spfrequest`).                  |
 | `target`       | `Element \| null` | The clicked element (`spfclick`).                               |
 | `response`     | `SingleResponse`  | The (possibly partial) response (`process`/`done`/part events). |
 | `part`         | `StreamPart`      | One part of a streamed response (part events).                  |
-| `err`          | `Error`           | The error that occurred (`spferror`).                           |
+| `err`          | `Error`           | The error that occurred (`spferror`, request failures only).    |
 | `transitioned` | `boolean`         | Whether view transitions were used for this navigation.         |
 
 ## `SpfEventHandler`
@@ -109,10 +109,10 @@ type SpfNavigationType = 'new' | 'history'; // drives cache eligibility
 The configuration shape — see the [Configuration guide](/guide/configuration)
 for the full key table.
 
-## `ApplyOptions`
-
-```ts
-interface ApplyOptions {
-  waitForScripts?: boolean; // whether scripts in head/foot block processing (default true)
-}
-```
+> **Internal:** `SpfConfig` is defined in `src/config.ts` but is **not**
+> re-exported from the package entry — the public `spf.config` API is typed
+> against it. The same applies to `ApplyOptions` (used by `spf.process`) and
+> `CacheType` (used by `spf.cache`). They appear here for reference; the
+> exported public types are `SingleResponse`, `StreamPart`, `RequestOptions`,
+> `SpfEventDetail`, `SpfEventHandler`, `SpfEventName`, `SpfRequestType` and
+> `SpfNavigationType`.

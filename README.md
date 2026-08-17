@@ -56,7 +56,7 @@ pnpm check        # vp check — format + lint + typecheck
 pnpm build        # vp pack — ESM + CJS + IIFE (global `spf`) + .d.ts via TS7
 pnpm docs:dev     # vitepress dev server
 pnpm docs:build   # build the docs site
-pnpm check:publish# build + publint + arethetypeswrong (packaged-output checks)
+pnpm check:publish  # build + publint + arethetypeswrong (packaged-output checks)
 ```
 
 ## License

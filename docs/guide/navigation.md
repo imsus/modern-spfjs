@@ -22,16 +22,21 @@ click .spf-link
 ```
 
 - **Click handling** — left-clicks without modifier keys on an `spf-link`
-  anchor or form are intercepted; `spf-nolink` descendants opt out. Returning
-  `false` from an `spfclick` handler (or calling `preventDefault()` on the
-  event) lets the browser navigate normally.
+  anchor or form are intercepted; `spf-nolink` descendants opt out. The
+  `spfclick` event is dispatched synchronously on `document` — cancel it with
+  `preventDefault()` (or return `false` from a handler registered with
+  `document.addEventListener`) to let the browser navigate normally.
 - **Interception** — the `navigate` event is intercepted only for
   same-origin destinations that match the pending intent. Everything else is
   left to the browser.
-- **Events** — handlers registered with `spf.event.on(name, fn)` run before
-  the `document` CustomEvent of the same name. Handlers may be async and are
-  awaited in order; returning `false` cancels the navigation step and falls
-  back to a full browser navigation. See [Events](/api/events).
+- **Events** — the pipeline events (`spfrequest`, `spfprocess`, `spfdone`,
+  `spferror`, `spfpartprocess`, `spfpartdone`) are Promise-aware: handlers
+  registered with `spf.event.on(name, fn)` run before the `document`
+  CustomEvent of the same name, may be async, and are awaited in order;
+  returning `false` cancels the step and falls back to a full browser
+  navigation. The click-time events (`spfclick`, `spfhistory`, `spfready`,
+  `spfreload`) are synchronous and skip the registry. See
+  [Events](/api/events).
 
 ## Processing order
 
@@ -45,13 +50,19 @@ replaces each fragment's content by ID.
 Navigations with `navigationType === 'traverse'` to a page we recorded
 (`state.spf`) are handled by SPF:
 
-1. `spfhistory` fires (cancelable);
-2. the response is served **from cache** — the durable Cache API tier first,
-   falling back to memory;
+1. `spfhistory` fires (cancelable via the document event);
+2. the response is served **from cache** — in-memory first, then the durable
+   Cache API tier;
 3. on a cache miss the URL is fetched and stored.
 
 This gives instant back/forward to previously visited SPF pages, bfcache-like,
 without a network round trip.
+
+Back/forward to an entry **without** SPF state is left to the browser — except
+that a _same-document_ destination would otherwise just rewind the URL and
+leave the SPF-replaced DOM stale, so SPF cancels the traversal and forces a
+full load of that URL instead (through the standard `spfreload` fallback).
+Cross-document destinations load the real page themselves.
 
 ## Programmatic navigation
 

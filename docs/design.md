@@ -16,7 +16,7 @@ surprising ones live in `adr/`.
 | Language         | TypeScript 7 (native compiler), ESM-first + CJS + IIFE (`spf` global), built with Vite+ (`vp pack` → Rolldown + tsdown, .d.ts emitted by TS7)          |
 | Fragments        | Per-ID fragments, innerHTML replacement; response body is `{id: html}`                                                                                 |
 | Streaming        | NDJSON parts over one request (title→url→head→attr→body→foot→done); classic single JSON always accepted                                                |
-| Request          | URL identifier `?spf=navigate                                                                                                                          | prefetch | load`(configurable) +`Accept` negotiation |
+| Request          | URL identifier `?spf=navigate \| prefetch \| load` (configurable) + `Accept` negotiation                                                               |
 | Cache            | Hybrid: in-memory LRU + Cache API; SPF new/history eligibility split with `cache-unified` opt-out                                                      |
 | Scripts          | ESM-native manager: `import()`, name→specifier registry, import-map-driven resolution (ADR 0002, ADR 0003)                                             |
 | Styles           | Constructable stylesheets (`adoptedStyleSheets`) with `<link>` fallback                                                                                |
