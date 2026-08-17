@@ -1,0 +1,25 @@
+{
+  "name": "modern-spf-demo-hono",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Hono (Node) demo of the modern-spf wire protocol: single JSON and NDJSON streaming responses, spf-link views.",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.ts",
+    "start": "node src/index.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "hono": "^4.13.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^7.0.2",
+    "vitest": "4.1.10"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

@@ -1,3 +1,8 @@
+# Workspace members: the library root plus the Hono demo (the Laravel demo
+# has its own Composer setup and is intentionally not a pnpm member).
+packages:
+  - '.'
+  - 'demo/hono'
 # Build-script approvals (pnpm 11 `allowBuilds`; the old
 # dangerouslyAllowAllBuilds key is no longer honored). esbuild's postinstall
 # is a legacy binary check needed by Vite 5 (vitepress).
