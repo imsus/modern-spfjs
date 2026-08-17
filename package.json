@@ -11,9 +11,6 @@
     "turbolinks"
   ],
   "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  },
   "files": [
     "dist"
   ],
@@ -34,6 +31,9 @@
         "default": "./dist/index.cjs"
       }
     }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "dev": "vp dev",
