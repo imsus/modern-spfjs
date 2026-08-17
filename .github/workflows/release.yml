@@ -2,13 +2,16 @@ name: Release
 
 # Publishes a new version when a commit lands on main.
 #
-# Notes:
-# - Requires two repository secrets: NPM_TOKEN (npm publish) and the default
-#   GITHUB_TOKEN (used automatically for the GitHub release).
-# - The repo's pre-release commits ("Initial scaffold:", "Phase 3: …") do not
-#   parse under the angular preset, so the first run may report "no release".
-#   Either push a conventional commit (feat:/fix:/…) or create a v0.x.0 tag
-#   manually to bootstrap the version history.
+# npm publishing uses **trusted publishing (OIDC)** — no NPM_TOKEN. The
+# npm-side contract must match this workflow exactly:
+#   https://www.npmjs.com/package/@imsus/modern-spf → Settings → Trusted
+#   Publisher → GitHub Actions → user `imsus`, repository `modern-spfjs`,
+#   workflow filename `release.yml`, allowed action `npm publish`.
+# (npm retired classic tokens Nov 2025; granular bypass-2FA tokens are
+# discouraged for automation. Trusted publishing is the recommended path.)
+#
+# The GITHUB_TOKEN (automatic) is used for the GitHub release and the
+# version-bump commit pushed by @semantic-release/git.
 on:
   push:
     branches: [main]
@@ -18,6 +21,7 @@ permissions:
   contents: write
   issues: write
   pull-requests: write
+  id-token: write # npm trusted publishing (OIDC)
 
 jobs:
   release:
@@ -56,5 +60,4 @@ jobs:
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: pnpm release
