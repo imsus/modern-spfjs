@@ -40,6 +40,9 @@ export default defineConfig({
       '.windsurf/**',
       'tools/oxlint/anti-slop/**',
       'docs/.vitepress/**',
+      // The Laravel demo is a separate app with its own tooling (Pint,
+      // Laravel's Vite setup) — the root JS toolchain does not format/lint it.
+      'demo/**',
     ],
     jsPlugins: [{ name: 'anti-slop', specifier: './tools/oxlint/anti-slop/index.ts' }],
     rules: {
@@ -81,6 +84,9 @@ export default defineConfig({
       '.windsurf/**',
       'tools/oxlint/anti-slop/**',
       'docs/.vitepress/**',
+      // The Laravel demo is a separate app with its own tooling — the root
+      // formatter does not touch it.
+      'demo/**',
     ],
   },
 });

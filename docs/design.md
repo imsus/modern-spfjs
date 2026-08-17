@@ -38,5 +38,5 @@ surprising ones live in `adr/`.
 2. Vertical slice: `spf.init` → `spf-link` click → Navigation API intercept → `?spf=navigate` fetch → single JSON apply → `spfdone` — **done**
 3. Deepen: cache (hybrid + policy) → NDJSON streaming (part events) → resources (import map, adoptedStyleSheets, unmanaged classics) → prefetch (speculation rules + viewport) → view transitions (default-on) → failure semantics — **done** (back/forward restore from cache, durable Cache API tier, speculation-rules injection, resource priming, transitions around apply only)
 4. Ship: IIFE build, API reference in the docs site, protocol spec, CI/release, publish checks — **done** (Vitepress site, hand-maintained API reference, publint + attw checks, semantic-release + GitHub Actions)
-5. Laravel demo: `?spf=` detection, JSON + NDJSON responses, `spf-link` views
-6. Test coverage: vitest (protocol, cache, registry) + Playwright E2E (navigation, streaming, back/forward, transitions, reduced-motion)
+5. Laravel demo: `?spf=` detection, JSON + NDJSON responses, `spf-link` views — **done** (Laravel app in `demo/`: `SpfPageController` with single-JSON and 120ms-part NDJSON stream responses, spf-link/spf-nolink/spf-no-transition views, feature tests for the wire protocol)
+6. Test coverage: vitest (protocol, cache, registry) + Playwright E2E (navigation, streaming, back/forward, transitions, reduced-motion) — **done** (42 unit tests; 8 Playwright E2E specs against a zero-dependency harness server; Laravel demo verified in-browser)
