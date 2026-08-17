@@ -1,0 +1,54 @@
+name: Release
+
+# Publishes a new version when a commit lands on main.
+#
+# Notes:
+# - Requires two repository secrets: NPM_TOKEN (npm publish) and the default
+#   GITHUB_TOKEN (used automatically for the GitHub release).
+# - The repo's pre-release commits ("Initial scaffold:", "Phase 3: …") do not
+#   parse under the angular preset, so the first run may report "no release".
+#   Either push a conventional commit (feat:/fix:/…) or create a v0.x.0 tag
+#   manually to bootstrap the version history.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: semantic-release
+    runs-on: ubuntu-latest
+    concurrency: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build library
+        run: pnpm build
+
+      - name: Publish checks (refuse to release a broken package)
+        run: pnpm check:publish
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm release

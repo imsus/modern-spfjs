@@ -15,6 +15,7 @@
     "dist"
   ],
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -42,17 +43,29 @@
     "check": "vp check",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "publint": "publint",
+    "attw": "attw --pack .",
+    "check:publish": "pnpm build && publint && attw --pack .",
+    "release": "semantic-release"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
     "@oxlint/plugins": "1.78.0",
+    "@semantic-release/changelog": "^7.0.0",
+    "@semantic-release/git": "^11.0.1",
     "@types/node": "^22.0.0",
     "jsdom": "^25.0.0",
     "oxlint": "1.78.0",
+    "publint": "0.3.23",
+    "semantic-release": "25.0.9",
     "typescript": "^7.0.2",
     "vite-plus": "^0.2.9",
     "vitepress": "1.6.4",
     "vitest": "4.1.10"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "packageManager": "pnpm@11.22.0"
 }
