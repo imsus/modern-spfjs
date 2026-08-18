@@ -2,7 +2,8 @@
 
 The ESM-native script manager (ADR 0002, ADR 0003): managed resources are ES
 modules loaded via `import()`, resolved through the page's import map for bare
-specifiers. See the [Scripts & styles guide](/guide/resources).
+specifiers. See the [Resources guide](/guide/resources); version switching is
+covered in [Versioning](/guide/versioning).
 
 ## Methods
 

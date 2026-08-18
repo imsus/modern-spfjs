@@ -2,7 +2,8 @@
 
 The style manager: constructable stylesheets (`document.adoptedStyleSheets`)
 with a `<link>` fallback where adoption can't apply (cross-origin/CSP). See
-the [Scripts & styles guide](/guide/resources).
+the [Resources guide](/guide/resources); version switching is covered in
+[Versioning](/guide/versioning).
 
 ## Methods
 

@@ -2,8 +2,9 @@
 
 **modern-spf** is a lightweight, zero-dependency, framework-agnostic library for
 fast same-origin navigation. It re-creates YouTube's
-[SPF](https://github.com/youtube/spfjs) — "Structured Page Fragments" — on
-modern browser primitives: clicking a link marked `spf-link` fetches only the
+[SPF](https://github.com/youtube/spfjs) — "Structured Page Fragments"
+([original docs](https://youtube.github.io/spfjs/)) — on modern browser
+primitives: clicking a link marked `spf-link` fetches only the
 changed fragments of the page (as JSON) and swaps them in, instead of loading
 the whole page.
 
@@ -55,7 +56,7 @@ either:
 - an **NDJSON stream** of parts, terminated by a `done` part.
 
 See [the wire protocol](/protocol) for the full contract, and the
-[Streaming](/guide/streaming) guide for the stream format.
+[Multipart responses](/guide/streaming) guide for the stream format.
 
 ## Quick tour
 
@@ -70,6 +71,19 @@ spf.init({
   'link-class': 'spf-link',
   'prefetch-viewport': true, // prefetch spf-links as they enter the viewport
 });
+```
+
+## Run the demo
+
+Reference implementations of the protocol ship with the repo — the
+[Hono demo](https://github.com/imsus/modern-spfjs/tree/main/demo/hono) (TS
+run natively on Node) tours every feature, and the
+[Laravel demo](https://github.com/imsus/modern-spfjs/tree/main/demo/laravel)
+shows a PHP server. Run the Hono one:
+
+```sh
+pnpm install
+pnpm --filter modern-spf-demo-hono dev   # http://127.0.0.1:3000
 ```
 
 ## Development

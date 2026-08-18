@@ -1,7 +1,8 @@
 # Configuration
 
 `spf.config` holds the global configuration, initialized from
-[SPF's defaults](https://github.com/youtube/spfjs) with modern additions.
+[SPF's defaults](https://github.com/youtube/spfjs)
+([original docs](https://youtube.github.io/spfjs/)) with modern additions.
 Pass a partial config object to `spf.init()` (or `spf.config.init()`), or read
 and write individual keys at runtime.
 

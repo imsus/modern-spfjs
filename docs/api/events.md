@@ -1,7 +1,9 @@
 # Events
 
 SPF dispatches `spf*` events (concept-compatible names with the original SPF).
-Dispatch is **Promise-aware for the pipeline events**: handlers registered with
+See the [Events guide](/guide/events) for the navigation life cycle; this
+page is the registry API reference. Dispatch is **Promise-aware for the
+pipeline events**: handlers registered with
 `spf.event.on` run first, are awaited in order, and a handler returning
 `false` cancels the event; then a cancelable `CustomEvent` is dispatched on
 `document` (so `document.addEventListener('spfrequest', …)` also works, and

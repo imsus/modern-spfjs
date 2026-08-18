@@ -1,4 +1,6 @@
-# Prefetch
+# Prefetching
+
+Prefetch responses before they're requested.
 
 Prefetching fetches a navigation's response (and primes its resources) _before_
 the user actually navigates, so the later navigation can be served from cache

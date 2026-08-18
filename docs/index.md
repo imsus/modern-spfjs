@@ -4,7 +4,7 @@ layout: home
 hero:
   name: modern-spf
   text: Fast same-origin navigation, the SPF way
-  tagline: Fetch only the fragments that change — never the whole page. A modern re-creation of YouTube's SPF, built on the Navigation API, view transitions, streaming, and ES modules.
+  tagline: Fetch only the fragments that change — never the whole page. A modern re-creation of YouTube's [SPF](https://github.com/youtube/spfjs), built on the Navigation API, view transitions, streaming, and ES modules.
   actions:
     - theme: brand
       text: Get started

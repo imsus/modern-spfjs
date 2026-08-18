@@ -4,6 +4,10 @@ SPF navigation is a pipeline driven by the
 [Navigation API](https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API).
 This page describes what happens from a click to the updated page.
 
+> The same pipeline at event level, and the response processing order, are
+> covered in [Events](/guide/events) and [Responses](/guide/responses) — this
+> page details the Navigation API mechanics.
+
 ## The pipeline
 
 A navigation runs this sequence (the same order SPF used, modernized):

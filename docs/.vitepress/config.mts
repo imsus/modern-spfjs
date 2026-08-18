@@ -20,12 +20,25 @@ export default defineConfig({
       {
         text: 'Guide',
         items: [
-          { text: 'Getting started', link: '/guide/getting-started' },
-          { text: 'Navigation', link: '/guide/navigation' },
-          { text: 'Streaming', link: '/guide/streaming' },
+          { text: 'Get Started', link: '/guide/getting-started' },
+          { text: 'Responses', link: '/guide/responses' },
+          { text: 'Events', link: '/guide/events' },
+          { text: 'Resources', link: '/guide/resources' },
+          { text: 'Versioning', link: '/guide/versioning' },
           { text: 'Caching', link: '/guide/caching' },
-          { text: 'Scripts & styles', link: '/guide/resources' },
-          { text: 'Prefetch', link: '/guide/prefetch' },
+          { text: 'Prefetching', link: '/guide/prefetch' },
+          {
+            text: 'Features',
+            items: [
+              { text: 'Multipart responses', link: '/guide/streaming' },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Modern additions',
+        items: [
+          { text: 'Navigation', link: '/guide/navigation' },
           { text: 'View transitions', link: '/guide/transitions' },
           { text: 'Configuration', link: '/guide/configuration' },
         ],
@@ -58,7 +71,8 @@ export default defineConfig({
       },
     ],
     footer: {
-      message: 'MIT licensed',
+      message:
+        'MIT licensed · Re-creation of <a href="https://github.com/youtube/spfjs">SPFJS</a> by YouTube (<a href="https://youtube.github.io/spfjs/">original docs</a>)',
     },
   },
 });

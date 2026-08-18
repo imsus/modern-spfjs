@@ -1,10 +1,11 @@
-# Streaming
+# Multipart responses
 
-A server may answer an SPF request with an **NDJSON stream** of parts
-(`Content-Type: application/x-spf+ndjson`) instead of a single JSON object.
-Each line is one part, parsed and fired as an event as it arrives — the
-response is never held whole in memory before processing starts, which is
-useful for slow servers and big pages.
+Streaming is the modern equivalent of SPF's multipart responses: instead of a
+single JSON object, a server may answer an SPF request with an **NDJSON
+stream** of parts (`Content-Type: application/x-spf+ndjson`). Each line is
+one part, parsed and fired as an event as it arrives — the response is never
+held whole in memory before processing starts, which is useful for slow
+servers and big pages.
 
 > **Note:** the DOM is updated once the stream completes — streaming is
 > incremental for _parsing and events_, not for fragment application. The

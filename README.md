@@ -9,7 +9,8 @@
     <a href="https://github.com/imsus/modern-spfjs/commits/main"><img src="https://img.shields.io/github/last-commit/imsus/modern-spfjs/main?style=flat-square" alt="Last commit"></a>
 </p>
 
-A modern re-creation of YouTube's **SPF** ("Structured Page Fragments") — a
+A modern re-creation of YouTube's
+[**SPF**](https://github.com/youtube/spfjs) ("Structured Page Fragments") — a
 lightweight, zero-dependency, framework-agnostic library for fast same-origin
 navigation: clicking an `spf-link` fetches only the fragments that change
 (JSON), never the whole page. Built on 2026 browser technology — the
@@ -127,6 +128,18 @@ pnpm check:publish  # build + publint + arethetypeswrong (packaged-output checks
 CI runs check, unit tests, the library and docs builds, publish checks and
 the Playwright suite on every push; `semantic-release` publishes on main when
 conventional commits land.
+
+## Acknowledgements
+
+A modern re-creation of **SPFJS** ("Structured Page Fragments"), originally
+built by YouTube and open-sourced by Google:
+
+- [github.com/youtube/spfjs](https://github.com/youtube/spfjs)
+- [youtube.github.io/spfjs](https://youtube.github.io/spfjs/)
+
+The `?spf=` identifier, JSON field names, `spf*` event names and the
+`spf-link` class are inherited from the original for concept compatibility
+(see [ADR 0001](docs/adr/0001-concept-compatible-not-dropin.md)).
 
 ## License
 

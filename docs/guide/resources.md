@@ -1,4 +1,6 @@
-# Scripts & styles
+# Resources
+
+Manage script and style loading.
 
 modern-spf manages two kinds of resources across navigations:
 
