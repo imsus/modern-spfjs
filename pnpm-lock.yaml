@@ -56,10 +56,10 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^2.1.1
-        version: 2.1.1(hono@4.13.2)
+        version: 2.1.1(hono@4.13.5)
       hono:
         specifier: ^4.13.2
-        version: 4.13.2
+        version: 4.13.5
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -2076,8 +2076,8 @@ packages:
   highlight.js@10.7.3:
     resolution: {integrity: sha512-tzcUFauisWKNHaRkN4Wjl/ZA07gENAjFl3J/c480dprkGTg5EQstgaNFqBfUqCq54kZRIEcreTsAgF/m2quD7A==}
 
-  hono@4.13.2:
-    resolution: {integrity: sha512-JydRilDRkYBQMt9qR9U92mXxmbGqsqSn/IKOrh4e7/gEbn+0zSr8igTu0obwJoNGN4sez28DIql7FBHWydoJpA==}
+  hono@4.13.5:
+    resolution: {integrity: sha512-O6+/eCYRkzzzy0rPWwKLiGBR1nFuUPZynnwjxN1MBA62NNqbT0wQEzQyK2gSO5yDIDB336sXQleAhOHrzlYyKw==}
     engines: {node: '>=16.9.0'}
 
   hook-std@4.0.0:
@@ -3723,9 +3723,9 @@ snapshots:
   '@esbuild/win32-x64@0.21.5':
     optional: true
 
-  '@hono/node-server@2.1.1(hono@4.13.2)':
+  '@hono/node-server@2.1.1(hono@4.13.5)':
     dependencies:
-      hono: 4.13.2
+      hono: 4.13.5
 
   '@iconify-json/simple-icons@1.2.93':
     dependencies:
@@ -5141,7 +5141,7 @@ snapshots:
 
   highlight.js@10.7.3: {}
 
-  hono@4.13.2: {}
+  hono@4.13.5: {}
 
   hook-std@4.0.0: {}
 
