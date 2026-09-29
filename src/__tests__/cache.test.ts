@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { clear, get, set } from '../cache';
 import { config } from '../config';
 import type { SingleResponse } from '../types';

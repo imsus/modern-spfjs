@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vite-plus/test';
 
 import { app } from '../src/app.ts';
 

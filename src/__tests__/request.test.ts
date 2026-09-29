@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { config } from '../config';
 import { buildHeaders, buildRequestUrl, parseStream } from '../request';
 import type { SingleResponse } from '../types';

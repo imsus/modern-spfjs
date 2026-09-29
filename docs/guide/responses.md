@@ -7,14 +7,14 @@ Processing happens in a fixed order:
 
 **title → url → head → attr → body → foot**
 
-| Step   | Effect                                                       |
-| ------ | ------------------------------------------------------------ |
-| `title`| Updates `document.title`                                     |
-| `url`  | Rewrites the current history entry to the correct URL        |
-| `head` | Installs early CSS/JS into `<head>`                          |
-| `attr` | Sets attributes on elements by ID                            |
-| `body` | Replaces each fragment's content by ID                       |
-| `foot` | Installs late JS/CSS after the body                          |
+| Step    | Effect                                                |
+| ------- | ----------------------------------------------------- |
+| `title` | Updates `document.title`                              |
+| `url`   | Rewrites the current history entry to the correct URL |
+| `head`  | Installs early CSS/JS into `<head>`                   |
+| `attr`  | Sets attributes on elements by ID                     |
+| `body`  | Replaces each fragment's content by ID                |
+| `foot`  | Installs late JS/CSS after the body                   |
 
 All fields are optional; the commonly needed ones are `title`, `head`,
 `body`, and `foot`.

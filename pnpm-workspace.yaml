@@ -8,12 +8,31 @@ packages:
 # is a legacy binary check needed by Vite 5 (vitepress).
 allowBuilds:
   esbuild: true
-# Vite+ overrides: alias vite to the Vite+ core and pin vitest to the bundled
-# version so the project and `vp test` share one copy (see viteplus.dev guide).
+# Vite+ overrides: alias vite to the Vite+ core so the project and `vp build`
+# share one copy (Vite+ 1.0.0 re-exports the bundled vitest, so no vitest pin
+# is needed; see the viteplus.dev guide).
 overrides:
-  vite: npm:@voidzero-dev/vite-plus-core@latest
-  vitest: 4.1.10
+  vite@*: 'catalog:'
   # Vitepress is not Rolldown-compatible (uses deprecated Rollup plugin APIs
   # and transformWithEsbuild): give it the real Vite 5 it was built against,
   # overriding the workspace-wide vite-plus alias for vitepress only.
   'vitepress>vite': ^5.4.14
+catalog:
+  vite: npm:@voidzero-dev/vite-plus-core@1.0.0
+  vite-plus: 1.0.0
+peerDependencyRules:
+  allowAny:
+    - vite
+  allowedVersions:
+    vite: '*'
+minimumReleaseAgeExclude:
+  - '@voidzero-dev/vite-plus-core@1.0.0'
+  - '@voidzero-dev/vite-plus-darwin-arm64@1.0.0'
+  - '@voidzero-dev/vite-plus-darwin-x64@1.0.0'
+  - '@voidzero-dev/vite-plus-linux-arm64-gnu@1.0.0'
+  - '@voidzero-dev/vite-plus-linux-arm64-musl@1.0.0'
+  - '@voidzero-dev/vite-plus-linux-x64-gnu@1.0.0'
+  - '@voidzero-dev/vite-plus-linux-x64-musl@1.0.0'
+  - '@voidzero-dev/vite-plus-win32-arm64-msvc@1.0.0'
+  - '@voidzero-dev/vite-plus-win32-x64-msvc@1.0.0'
+  - vite-plus@1.0.0

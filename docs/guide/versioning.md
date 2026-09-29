@@ -38,8 +38,8 @@ When you push a new version, update the import map and the registry:
 ```
 
 ```js
-spf.script.unload('player');      // drop the old registry entry
-await spf.script.load('player');  // resolves /assets/player.v3.js
+spf.script.unload('player'); // drop the old registry entry
+await spf.script.load('player'); // resolves /assets/player.v3.js
 ```
 
 Because an ES module cannot be unmounted once loaded, "unloading" a managed
